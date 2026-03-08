@@ -1,0 +1,14 @@
+-- SQLBook: Code
+SELECT * FROM track;
+-- SQLBook: Code
+SELECT * FROM artist;
+-- SQLBook: Code
+SELECT * FROM album;
+-- SQLBook: Code
+SELECT * 
+FROM track 
+ORDER BY milliseconds DESC;
+
+-- SELECT name, milliseconds 
+-- FROM track 
+-- ORDER BY milliseconds DESC;

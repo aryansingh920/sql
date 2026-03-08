@@ -1,0 +1,26 @@
+1. The Music Catalog (The "What")
+This is where the actual content lives.
+
+artist: Names of the performers (e.g., AC/DC).
+
+album: Titles of the collections (e.g., Let There Be Rock).
+
+genre: Music categories (e.g., Rock, Jazz).
+
+media_type: The format of the file (e.g., MPEG audio, AAC).
+
+2. The Business Side (The "Who" & "How Much")
+This tracks the money and the people.
+
+customer: Personal info for everyone who bought music.
+
+employee: The staff at the store (who reports to whom).
+
+invoice: The "Header" of a sale (Date, Total, Billing Address).
+
+invoice_line: The "Line Items" (Which specific track was bought in that invoice).
+
+3. The Organization (The "Playlists")
+playlist: The names of user-created lists.
+
+playlist_track: The "Bridge" table that connects tracks to playlists.
