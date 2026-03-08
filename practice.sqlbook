@@ -25,7 +25,166 @@ WHERE name LIKE 'Black%'; -- starts with
 -- WHERE name LIKE '%e'; -- ends with
 -- WHERE name LIKE '%Black%'; -- betweeb
 -- SQLBook: Code
-
+CREATE TABLE my_favorites (
+    favorite_id SERIAL PRIMARY KEY,
+    track_id INT,
+    rating INT,
+    notes TEXT
+);
+-- SQLBook: Code
+SELECT 
+    t.name AS track_name, 
+    g.name AS genre_name,
+    al.title AS album_title
+FROM track t
+JOIN genre g ON t.genre_id = g.genre_id
+JOIN album al ON t.album_id = al.album_id
+LIMIT 10;
+-- SQLBook: Code
+INSERT INTO my_favorites (track_id, rating, notes)
+VALUES (1, 5, 'Absolute banger!'),
+       (2, 4, 'Great for coding');
+-- SQLBook: Code
+SELECT * FROM my_favorites
+-- SQLBook: Code
+SELECT  *
+FROM my_favorites f
+JOIN track t ON f.track_id = t.track_id
+JOIN album a ON t.album_id = a.album_id
+-- SQLBook: Code
+SELECT 
+    f.track_id AS fav_id,
+    f.rating,
+    t.name AS track_name,
+    t.composer
+FROM my_favorites f
+JOIN track t ON f.track_id = t.track_id;
+-- SQLBook: Code
+UPDATE my_favorites
+SET rating = 10
+WHERE track_id = 1;
+-- SQLBook: Code
+DELETE FROM my_favorites
+WHERE track_id = 2;
+-- SQLBook: Code
+SELECT COUNT(*) FROM customer;
+-- SQLBook: Code
+SELECT SUM(total) FROM invoice;
+-- SQLBook: Code
+-- Milliseconds / 1000 / 60 = Minutes
+SELECT AVG(milliseconds) / 60000 AS avg_minutes FROM track;
+-- SQLBook: Code
+SELECT 
+    country, 
+    COUNT(customer_id) AS customer_count
+FROM customer
+GROUP BY country
+ORDER BY customer_count DESC;
+-- SQLBook: Code
+SELECT 
+    g.name AS genre_name, 
+    COUNT(t.track_id) AS track_count
+FROM genre g
+JOIN track t ON g.genre_id = t.genre_id
+GROUP BY g.name
+ORDER BY track_count DESC;
+-- SQLBook: Code
+SELECT 
+    g.name, 
+    COUNT(t.track_id) AS total
+FROM genre g
+JOIN track t ON g.genre_id = t.genre_id
+GROUP BY g.name
+HAVING COUNT(t.track_id) > 100
+ORDER BY total DESC;
+-- SQLBook: Code
+SELECT table_name 
+FROM information_schema.tables 
+WHERE table_schema = 'public';
+-- SQLBook: Code
+CREATE TABLE audit_log (
+    audit_id SERIAL PRIMARY KEY,
+    table_name TEXT NOT NULL,          -- Which table changed
+    operation TEXT NOT NULL,           -- INSERT, UPDATE, or DELETE
+    username TEXT DEFAULT current_user,-- Attributable (Who)
+    changed_at TIMESTAMP DEFAULT now(),-- Contemporaneous (When)
+    old_data JSONB,                    -- Original data
+    new_data JSONB                     -- Accurate/New data
+);
+-- SQLBook: Code
+CREATE OR REPLACE FUNCTION process_audit_log() 
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (TG_OP = 'DELETE') THEN
+        INSERT INTO audit_log(table_name, operation, old_data)
+        VALUES (TG_TABLE_NAME, TG_OP, to_jsonb(OLD));
+    ELSIF (TG_OP = 'UPDATE') THEN
+        INSERT INTO audit_log(table_name, operation, old_data, new_data)
+        VALUES (TG_TABLE_NAME, TG_OP, to_jsonb(OLD), to_jsonb(NEW));
+    ELSIF (TG_OP = 'INSERT') THEN
+        INSERT INTO audit_log(table_name, operation, new_data)
+        VALUES (TG_TABLE_NAME, TG_OP, to_jsonb(NEW));
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+-- SQLBook: Code
+CREATE TRIGGER favorite_audit_trigger
+AFTER INSERT OR UPDATE OR DELETE ON my_favorites
+FOR EACH ROW EXECUTE FUNCTION process_audit_log();
+-- SQLBook: Code
+UPDATE my_favorites 
+SET rating = 1, 
+    notes = 'Updated for audit test' 
+WHERE track_id = 1;
+-- SQLBook: Code
+SELECT * FROM audit_log;
+-- SQLBook: Code
+CREATE OR REPLACE FUNCTION format_time(ms INTEGER) 
+RETURNS TEXT AS $$
+DECLARE
+    minutes INTEGER;
+    seconds INTEGER;
+BEGIN
+    -- Logic: Calculate minutes and remaining seconds
+    minutes := ms / 60000;
+    seconds := (ms % 60000) / 1000;
+    
+    -- Return a formatted string
+    RETURN minutes || ':' || LPAD(seconds::TEXT, 2, '0');
+END;
+$$ LANGUAGE plpgsql;
+-- SQLBook: Code
+SELECT 
+    name, 
+    milliseconds, 
+    format_time(milliseconds) AS duration_readable
+FROM track
+LIMIT 10;
 -- SQLBook: Code
 
 -- SQLBook: Code
+
+-- SQLBook: Code
+SELECT table_name 
+FROM information_schema.tables 
+WHERE table_schema = 'public' 
+  AND table_type = 'BASE TABLE';
+-- SQLBook: Code
+DO $$ 
+DECLARE 
+    t TEXT;
+BEGIN
+    FOR t IN 
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+          AND table_type = 'BASE TABLE'
+          AND table_name != 'audit_log' -- Don't audit the audit log!
+    LOOP
+        EXECUTE format('
+            CREATE TRIGGER %I_audit_trigger
+            AFTER INSERT OR UPDATE OR DELETE ON %I
+            FOR EACH ROW EXECUTE FUNCTION process_audit_log()', t, t);
+    END LOOP;
+END $$;
