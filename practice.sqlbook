@@ -7,8 +7,25 @@ SELECT * FROM album;
 -- SQLBook: Code
 SELECT * 
 FROM track 
+ORDER BY milliseconds DESC
+LIMIT 100;
+-- SQLBook: Code
+SELECT name, milliseconds 
+FROM track 
 ORDER BY milliseconds DESC;
+-- SQLBook: Code
+SELECT name, unit_price 
+FROM track 
+ORDER BY unit_price ASC 
+LIMIT 5;
+-- SQLBook: Code
+SELECT * 
+FROM artist 
+WHERE name LIKE 'Black%'; -- starts with
+-- WHERE name LIKE '%e'; -- ends with
+-- WHERE name LIKE '%Black%'; -- betweeb
+-- SQLBook: Code
 
--- SELECT name, milliseconds 
--- FROM track 
--- ORDER BY milliseconds DESC;
+-- SQLBook: Code
+
+-- SQLBook: Code
